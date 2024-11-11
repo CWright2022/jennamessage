@@ -1,6 +1,6 @@
 const char* ssid                    = "crackhome";
 const char* password                = "crackhome";
-const char* mqtt_server             = "192.168.1.140";
+const char* mqtt_server             = "192.168.1.85";
 const char* mqtt_user               = "";
 const char* mqtt_pass               = "";
 const char* my_id                   = "testclient";
