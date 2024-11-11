@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenna's Secret Gift</title>
+</head>
+<body>
+    <!-- Input form for user's name -->
+    <form onsubmit="getValues(event)">
+        <label for="message">Message:</label>
+        <input type="text" id="message" placeholder="Message" required><br>
+        
+        <label for="text_size">Text Size:</label>
+        <select name="text_size" id="text_size">
+            <option value="S">Small</option>
+            <option value="M">Medium</option>
+            <option value="L">Large</option>
+        </select><br>
+
+        <label for="justify">Justify:</label>
+        <select name="justify" id="justify">
+            <option value="L">Left</option>
+            <option value="C">Center</option>
+            <option value="R">Right</option>
+        </select><br>
+
+        <label for="bold">Bold:</label>
+        <input id="bold" name="bold" type="checkbox"><br>
+
+        <label for="underline">Underline:</label>
+        <input id="underline" name="underline" type="checkbox"><br>
+
+        <label for="inverted">Inverted:</label>
+        <input id="inverted" name="inverted" type="checkbox"><br>
+
+        <button type="submit">Submit</button>
+    </form>
+    
+    <!-- Display greeting message here -->
+    
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="script.js"></script>
+    
+</body>
+</html>
