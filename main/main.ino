@@ -25,23 +25,6 @@ int queueStart = 0;
 int queueEnd = 0;
 int queueCount = 0;
 
-// Function to add a message to the queue
-void queueMessage(const String& message) {
-  if (queueCount < QUEUE_SIZE) {  // Only add if there's space
-    messageQueue[queueEnd] = message;
-    Serial.print("queued message at index:");
-    Serial.println(queueEnd);
-    queueEnd = (queueEnd + 1) % QUEUE_SIZE;
-    queueCount++;
-    Serial.print("queueStart: ");
-    Serial.print(queueStart);
-    Serial.print(" queueEnd: ");
-    Serial.print(queueEnd);
-    Serial.print(" queueCount: ");
-    Serial.println(queueCount);
-  }
-}
-
 char mqtt_id[24];
 char mqtt_topic[50];
 
@@ -59,21 +42,43 @@ auto redLed = JLed(RED_PIN);
 auto greenLed = JLed(GREEN_PIN);
 auto blueLed = JLed(BLUE_PIN);
 
+//interrupt function to set a flag for later since we can't spend too long on an interrupt
 ICACHE_RAM_ATTR void isr() {
-  Serial.println("INTERRUPTED");
   if(queueCount > 0){
-    Serial.println("there is at least one message");
     printMessage = true;
   }
 }
 
+// Function to add a message to the queue
+void queueMessage(const String& message) {
+  if (queueCount < QUEUE_SIZE) {  // Only add if there's space
+    messageQueue[queueEnd] = message;
+    Serial.print("queued message at index:");
+    Serial.println(queueEnd);
+    queueEnd = (queueEnd + 1) % QUEUE_SIZE;
+    queueCount++;
+    Serial.print("queueStart: ");
+    Serial.print(queueStart);
+    Serial.print(" queueEnd: ");
+    Serial.print(queueEnd);
+    Serial.print(" queueCount: ");
+    Serial.println(queueCount);
+    redLed.Breathe(2000).DelayAfter(1000).Forever();
+    blueLed.Breathe(2000).DelayAfter(1000).Forever();
+  }
+}
+
+//actually prints the message
 void printQueuedMessage(){
     printer.print(messageQueue[queueStart]);
-    Serial.println("printed message");
+    Serial.print("printed message: ");
+    Serial.println(messageQueue[queueStart]);
     queueStart = (queueStart + 1) % QUEUE_SIZE;
-    Serial.println("moved queueStart");
     queueCount--;
-    Serial.println("decremented queueCount");
+    if(queueCount == 0){
+      redLed.Stop();
+      blueLed.Stop();
+    }
     printMessage = false;
 }
 
@@ -176,12 +181,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
       output.concat((char)payload[i]);
     }
     queueMessage(output);
-    if (queueCount >= 1) {
-      greenLed.Breathe(2000).DelayAfter(1000).Repeat(5);
-    }
-    // printer.print(F("\n"));
-    redLed.Breathe(2000).DelayAfter(1000).Forever();
-    blueLed.Breathe(2000).DelayAfter(1000).Forever();
   }
 }
 
