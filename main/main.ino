@@ -29,11 +29,18 @@ int queueCount = 0;
 void queueMessage(const String& message) {
   if (queueCount < QUEUE_SIZE) {  // Only add if there's space
     messageQueue[queueEnd] = message;
+    Serial.print("queued message at index:");
+    Serial.println(queueEnd);
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
     queueCount++;
+    Serial.print("queueStart: ");
+    Serial.print(queueStart);
+    Serial.print(" queueEnd: ");
+    Serial.print(queueEnd);
+    Serial.print(" queueCount: ");
+    Serial.println(queueCount);
   }
 }
-
 char mqtt_id[24];
 char mqtt_topic[50];
 
@@ -51,6 +58,13 @@ Adafruit_Thermal printer(&mySerial);
 auto redLed = JLed(RED_PIN);
 auto greenLed = JLed(GREEN_PIN);
 auto blueLed = JLed(BLUE_PIN);
+
+void printQueuedMessage() {
+  printer.print(messageQueue[queueStart]);
+  queueStart = (queueStart + 1) % QUEUE_SIZE;
+  queueCount--;
+}
+
 
 void callback(char* topic, byte* payload, unsigned int length) {
 
@@ -169,12 +183,6 @@ void setLed(int red, int green, int blue) {
   analogWrite(BLUE_PIN, blue);
 }
 
-// void debugPrint(char[] stringtoPrint){
-//   if(DEBUG){
-//     printer.println(F(stringtoPrint));
-//   }
-// }
-
 void setup() {
 
   pinMode(RED_PIN, OUTPUT);
@@ -183,6 +191,7 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT);
   pinMode(DEBUG_PIN, INPUT);
   setLed(255, 255, 255);
+  Serial.begin(115200);
 
   mySerial.begin(baud);
   printer.begin();
@@ -190,19 +199,15 @@ void setup() {
 
   printer.setSize(mqtt_text_size);
   printer.setLineHeight(mqtt_row_spacing);
-  // printer.feed(1);
-  // debugPrint("Printer initialized");
+  Serial.println("printer initializzed");
 
   wifi_station_set_hostname(my_id);
-  // printer.print(F("Hostname: "));
-  // printer.println(my_id);
+  Serial.print(F("Hostname: "));
+  Serial.println(my_id);
   WiFi.mode(WIFI_STA);
 
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
-  // if(digitalRead(DEBUG_PIN)==LOW){
-  //   printer.println(F("Debug enabled"));
-  // }
 }
 
 void loop() {
@@ -211,27 +216,37 @@ void loop() {
   greenLed.Update();
   blueLed.Update();
 
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    Serial.println("button press detected");
+    printQueuedMessage();
+    delay(100);
+  }
+
   if (WiFi.status() != WL_CONNECTED) {
     setLed(255, 0, 0);
 
-    // printer.println(F("Connecting to WiFi..."));
+    Serial.println(F("Connecting to WiFi..."));
     WiFi.begin(ssid, password);
 
     unsigned long begin_started = millis();
     while (WiFi.status() != WL_CONNECTED) {
       delay(10);
       if (millis() - begin_started > 60000) {
+        Serial.println("Wifi not connected in 1 minute. Restarting...");
         ESP.restart();
       }
     }
-    // printer.println(F("WiFi connected!"));
+    Serial.println("WiFi connected!");
   }
 
   if (!mqtt.connected()) {
     setLed(255, 50, 0);
+    Serial.print("connecting to broker...");
+    Serial.println("")
 
     if (mqtt.connect(mqtt_id)) {
-      // printer.println(F("MQTT connected"));
+      Serial.println("Connected to broker at: "));
+      Seria.println(mqtt_server);
       setLed(0, 255, 0);
       // printer.feed(1);
       mqtt.subscribe(mqtt_listen_topic_text2print);
@@ -244,8 +259,7 @@ void loop() {
       mqtt.subscribe(mqtt_listen_topic_barcode);
       setLed(0, 0, 0);
     } else {
-      // printer.println(F("MQTT connection failed"));
-      // printer.feed(1);
+      Serial.println("connection to broker "+mqtt_server+" failed.");
       delay(2000);
       return;
     }
@@ -257,8 +271,10 @@ void loop() {
     delay(100);
     if (bPaperCheck) {
       mqtt.publish(mqtt_listen_topic_papercheck, "yes");
+      Serial.println("paper OK");
     } else {
       mqtt.publish(mqtt_listen_topic_papercheck, "no");
+      Serial.println("out of paper")
     }
     lastTimeItHappened = millis();
   }
