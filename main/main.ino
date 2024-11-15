@@ -41,11 +41,11 @@ void queueMessage(const String& message) {
     Serial.println(queueCount);
   }
 }
+
 char mqtt_id[24];
 char mqtt_topic[50];
 
-
-bool DEBUG = false;
+bool printMessage = false;
 
 uint32_t lastTimeItHappened = millis() + papercheck_milliseconds;
 
@@ -59,12 +59,23 @@ auto redLed = JLed(RED_PIN);
 auto greenLed = JLed(GREEN_PIN);
 auto blueLed = JLed(BLUE_PIN);
 
-void printQueuedMessage() {
-  printer.print(messageQueue[queueStart]);
-  queueStart = (queueStart + 1) % QUEUE_SIZE;
-  queueCount--;
+ICACHE_RAM_ATTR void isr() {
+  Serial.println("INTERRUPTED");
+  if(queueCount > 0){
+    Serial.println("there is at least one message");
+    printMessage = true;
+  }
 }
 
+void printQueuedMessage(){
+    printer.print(messageQueue[queueStart]);
+    Serial.println("printed message");
+    queueStart = (queueStart + 1) % QUEUE_SIZE;
+    Serial.println("moved queueStart");
+    queueCount--;
+    Serial.println("decremented queueCount");
+    printMessage = false;
+}
 
 void callback(char* topic, byte* payload, unsigned int length) {
 
@@ -156,9 +167,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     printer.printBarcode(barcode_value, (uint8_t)barcode_type);
   }
 
-
-
-
   // topic to print text
   if (strcmp(topic, mqtt_listen_topic_text2print) == 0) {
     // printer.print(F("Message arrived:\n"));
@@ -192,6 +200,7 @@ void setup() {
   pinMode(DEBUG_PIN, INPUT);
   setLed(255, 255, 255);
   Serial.begin(115200);
+  attachInterrupt(BUTTON_PIN, isr, FALLING);
 
   mySerial.begin(baud);
   printer.begin();
@@ -211,16 +220,19 @@ void setup() {
 }
 
 void loop() {
+  if(printMessage){
+    printQueuedMessage();
+  }
 
   redLed.Update();
   greenLed.Update();
   blueLed.Update();
 
-  if (digitalRead(BUTTON_PIN) == LOW) {
-    Serial.println("button press detected");
-    printQueuedMessage();
-    delay(100);
-  }
+  // if (digitalRead(BUTTON_PIN) == LOW) {
+  //   Serial.println("button press detected");
+  //   printQueuedMessage();
+  //   delay(100);
+  // }
 
   if (WiFi.status() != WL_CONNECTED) {
     setLed(255, 0, 0);
@@ -241,12 +253,12 @@ void loop() {
 
   if (!mqtt.connected()) {
     setLed(255, 50, 0);
-    Serial.print("connecting to broker...");
-    Serial.println("")
+    Serial.print("connecting to broker at:");
+    Serial.println(mqtt_server);
 
     if (mqtt.connect(mqtt_id)) {
-      Serial.println("Connected to broker at: "));
-      Seria.println(mqtt_server);
+      Serial.println("Connected to broker at: ");
+      Serial.println(mqtt_server);
       setLed(0, 255, 0);
       // printer.feed(1);
       mqtt.subscribe(mqtt_listen_topic_text2print);
@@ -259,7 +271,9 @@ void loop() {
       mqtt.subscribe(mqtt_listen_topic_barcode);
       setLed(0, 0, 0);
     } else {
-      Serial.println("connection to broker "+mqtt_server+" failed.");
+      Serial.print("connection to broker:");
+      Serial.print(mqtt_server);
+      Serial.println(" failed.");
       delay(2000);
       return;
     }
@@ -274,7 +288,7 @@ void loop() {
       Serial.println("paper OK");
     } else {
       mqtt.publish(mqtt_listen_topic_papercheck, "no");
-      Serial.println("out of paper")
+      Serial.println("out of paper");
     }
     lastTimeItHappened = millis();
   }
