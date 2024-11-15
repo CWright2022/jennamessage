@@ -18,7 +18,6 @@ const char* mqtt_listen_topic_textjustify = "printer/text_justify";
 const char* mqtt_listen_topic_textbold = "printer/text_bold";
 const char* mqtt_listen_topic_textunderline = "printer/text_underline";
 // since Version 2.1
-const char* mqtt_listen_topic_barcode = "printer/barcode"; // print barcode in syntax: <barcodetype>|<barcode_value> e.g. 4|HelloMaster here 4 is barcodetype CODE93
 const char* mqtt_listen_topic_papercheck = "printer/papercheck"; // on this topic, you will recieve every defined 10 seconds the status of the paperload 
 //
 char mqtt_text_size                  = 'S'; // Letter size - default is S, options are S for Small, M for Medium, L for Large set it via mqtt 

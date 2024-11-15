@@ -5,10 +5,9 @@
 #include "Adafruit_Thermal.h"
 #include "SoftwareSerial.h"
 #include <jled.h>
-// #include "Queue.h"
 
-#define RX_PIN 5  // RX GPIO-Pin of your Microcontroller
-#define TX_PIN 4  // TX GPIO-Pin of your Microcontroller
+#define RX_PIN 5  // RX for printer
+#define TX_PIN 4  // TX for printer
 #define RED_PIN 14
 #define GREEN_PIN 12
 #define BLUE_PIN 13
@@ -18,8 +17,10 @@
 #define MAX_TOPIC_LENGTH 50
 #define MAX_PAYLOAD_LENGTH 10
 
-//i hate embedded code - I spent hours trying to et a queue to work
+//i hate embedded code - I spent hours trying to get a queue to work (and it still needs changing)
 #define QUEUE_SIZE 10
+
+//setup array and tracking vars
 String messageQueue[QUEUE_SIZE];
 int queueStart = 0;
 int queueEnd = 0;
@@ -27,8 +28,6 @@ int queueCount = 0;
 
 char mqtt_id[24];
 char mqtt_topic[50];
-
-bool printMessage = false;
 
 uint32_t lastTimeItHappened = millis() + papercheck_milliseconds;
 
@@ -42,12 +41,15 @@ auto redLed = JLed(RED_PIN);
 auto greenLed = JLed(GREEN_PIN);
 auto blueLed = JLed(BLUE_PIN);
 
-//interrupt function to set a flag for later since we can't spend too long on an interrupt
+bool printMessage = false;
+
+//interrupt function to set a flag for later (above) since we can't spend too long on an interrupt
 ICACHE_RAM_ATTR void isr() {
   if(queueCount > 0){
     printMessage = true;
   }
 }
+
 
 // Function to add a message to the queue
 void queueMessage(const String& message) {
@@ -57,33 +59,30 @@ void queueMessage(const String& message) {
     Serial.println(queueEnd);
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
     queueCount++;
-    Serial.print("queueStart: ");
-    Serial.print(queueStart);
-    Serial.print(" queueEnd: ");
-    Serial.print(queueEnd);
-    Serial.print(" queueCount: ");
-    Serial.println(queueCount);
+    //breathe purple LED
     redLed.Breathe(2000).DelayAfter(1000).Forever();
     blueLed.Breathe(2000).DelayAfter(1000).Forever();
   }
 }
 
-//actually prints the message
+//actually prints the message via the printer
 void printQueuedMessage(){
     printer.print(messageQueue[queueStart]);
     Serial.print("printed message: ");
     Serial.println(messageQueue[queueStart]);
     queueStart = (queueStart + 1) % QUEUE_SIZE;
     queueCount--;
+    //if no more messages, stop breathing
     if(queueCount == 0){
       redLed.Stop();
       blueLed.Stop();
     }
+    //reset flag
     printMessage = false;
 }
 
+//MQTT callback - needs major refactoring to support format changes
 void callback(char* topic, byte* payload, unsigned int length) {
-
   // set textlineheight
   if (strcmp(topic, mqtt_listen_topic_textlineheight) == 0) {
     //this topic expects integer!
@@ -148,30 +147,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
   }
 
-  // topic to print barcode
-  if (strcmp(topic, mqtt_listen_topic_barcode) == 0) {
-    uint8_t barcode_type = 0;
-    char barcode_value[255] = "";  // some borcodes allows only 255 digits(!) but not for our 58mm printer ;)
-    int y = 0;
-    bool barcodeseperatorfound = false;
-    for (int i = 0; i < length; i++) {
-      if (!barcodeseperatorfound) {
-        if (payload[i] == '|') {
-          barcodeseperatorfound = true;
-          continue;
-        }
-        char c = payload[i];
-        if (c >= '0' && c <= '9') {
-          barcode_type = barcode_type * 10 + c - '0';  //encode to interger
-        }
-      } else {
-        barcode_value[y++] = (char)payload[i];
-      }
-    }
-
-    printer.printBarcode(barcode_value, (uint8_t)barcode_type);
-  }
-
   // topic to print text
   if (strcmp(topic, mqtt_listen_topic_text2print) == 0) {
     // printer.print(F("Message arrived:\n"));
@@ -184,6 +159,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+//manually setting LED color without JLED
 void setLed(int red, int green, int blue) {
   analogWrite(RED_PIN, red);
   analogWrite(GREEN_PIN, green);
@@ -191,7 +167,7 @@ void setLed(int red, int green, int blue) {
 }
 
 void setup() {
-
+  //basic setup
   pinMode(RED_PIN, OUTPUT);
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
@@ -201,38 +177,37 @@ void setup() {
   Serial.begin(115200);
   attachInterrupt(BUTTON_PIN, isr, FALLING);
 
+  //initialize printer
   mySerial.begin(baud);
   printer.begin();
   printer.setDefault();
-
   printer.setSize(mqtt_text_size);
   printer.setLineHeight(mqtt_row_spacing);
   Serial.println("printer initializzed");
 
+  //initialize wifi
   wifi_station_set_hostname(my_id);
   Serial.print(F("Hostname: "));
   Serial.println(my_id);
   WiFi.mode(WIFI_STA);
 
+  //setup MQTT
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
 }
 
 void loop() {
+  //print message if we were told to by the interrupt
   if(printMessage){
     printQueuedMessage();
   }
 
+  //JLED update functions
   redLed.Update();
   greenLed.Update();
   blueLed.Update();
 
-  // if (digitalRead(BUTTON_PIN) == LOW) {
-  //   Serial.println("button press detected");
-  //   printQueuedMessage();
-  //   delay(100);
-  // }
-
+  //connect to Wifi - RED LED
   if (WiFi.status() != WL_CONNECTED) {
     setLed(255, 0, 0);
 
@@ -240,6 +215,7 @@ void loop() {
     WiFi.begin(ssid, password);
 
     unsigned long begin_started = millis();
+    //if wifi isn't working, reboot
     while (WiFi.status() != WL_CONNECTED) {
       delay(10);
       if (millis() - begin_started > 60000) {
@@ -250,6 +226,8 @@ void loop() {
     Serial.println("WiFi connected!");
   }
 
+
+  //connect to broker - YELLOW LED
   if (!mqtt.connected()) {
     setLed(255, 50, 0);
     Serial.print("connecting to broker at:");
@@ -258,8 +236,9 @@ void loop() {
     if (mqtt.connect(mqtt_id)) {
       Serial.println("Connected to broker at: ");
       Serial.println(mqtt_server);
+      //green LED for a tiny bit 
       setLed(0, 255, 0);
-      // printer.feed(1);
+      //subscribe to all topics
       mqtt.subscribe(mqtt_listen_topic_text2print);
       mqtt.subscribe(mqtt_listen_topic_textsize);
       mqtt.subscribe(mqtt_listen_topic_textlineheight);
@@ -267,7 +246,7 @@ void loop() {
       mqtt.subscribe(mqtt_listen_topic_textjustify);
       mqtt.subscribe(mqtt_listen_topic_textbold);
       mqtt.subscribe(mqtt_listen_topic_textunderline);
-      mqtt.subscribe(mqtt_listen_topic_barcode);
+      //reset LED so JLED can take over
       setLed(0, 0, 0);
     } else {
       Serial.print("connection to broker:");
