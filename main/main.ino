@@ -17,11 +17,23 @@
 #define MAX_TOPIC_LENGTH 50
 #define MAX_PAYLOAD_LENGTH 10
 
-//i hate embedded code - I spent hours trying to get a queue to work (and it still needs changing)
+//i hate embedded code - this system of multiple queues isn't ideal
 #define QUEUE_SIZE 10
 
-//setup array and tracking vars
+//setup arrays, global vars and tracking vars
 String messageQueue[QUEUE_SIZE];
+bool invertQueue[QUEUE_SIZE];
+bool underlineQueue[QUEUE_SIZE];
+bool boldQueue[QUEUE_SIZE];
+char justifyQueue[QUEUE_SIZE];
+char sizeQueue[QUEUE_SIZE];
+
+bool INVERT = false;
+bool UNDERLINE = false;
+bool BOLD = false;
+char JUSTIFY = 'C';
+char SIZE = 'L';
+
 int queueStart = 0;
 int queueEnd = 0;
 int queueCount = 0;
@@ -55,6 +67,10 @@ ICACHE_RAM_ATTR void isr() {
 void queueMessage(const String& message) {
   if (queueCount < QUEUE_SIZE) {  // Only add if there's space
     messageQueue[queueEnd] = message;
+    invertQueue[queueEnd]=INVERT;
+    boldQueue[queueEnd]=BOLD;
+    justifyQueue[queueEnd]=JUSTIFY;
+    sizeQueue[queueEnd]=SIZE;
     Serial.print("queued message at index:");
     Serial.println(queueEnd);
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
@@ -67,9 +83,24 @@ void queueMessage(const String& message) {
 
 //actually prints the message via the printer
 void printQueuedMessage(){
+    invertQueue[queueStart] ? printer.inverseOn() : printer.inverseOff();
+    underlineQueue[queueStart] ? printer.underlineOn() : printer.underlineOff();
+    boldQueue[queueStart] ? printer.boldOn() : printer.boldOff();
+    printer.justify(justifyQueue[queueStart]);
+    printer.setSize(sizeQueue[queueStart]);
     printer.print(messageQueue[queueStart]);
     Serial.print("printed message: ");
     Serial.println(messageQueue[queueStart]);
+    Serial.print("Inverted: ");
+    Serial.println(invertQueue[queueStart]);
+    Serial.print("Underline: ");
+    Serial.println(underlineQueue[queueStart]);
+    Serial.print("Bold: ");
+    Serial.println(boldQueue[queueStart]);
+    Serial.print("Justify: ");
+    Serial.println(justifyQueue[queueStart]);
+    Serial.print("Size: ");
+    Serial.println(sizeQueue[queueStart]);
     queueStart = (queueStart + 1) % QUEUE_SIZE;
     queueCount--;
     //if no more messages, stop breathing
@@ -100,7 +131,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i = 0; i < length; i++) {
       c = payload[i];
     }
-    printer.setSize(c);
+    SIZE = c;
   }
   // topic to inverse the text (0 | 1)
   if (strcmp(topic, mqtt_listen_topic_textinverse) == 0) {
@@ -109,9 +140,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
       c = payload[i];
     }
     if (c == '1') {
-      printer.inverseOn();
+      INVERT = true;
     } else {
-      printer.inverseOff();
+      INVERT = false;
     }
   }
   // topic to justify the text (L | C | R)
@@ -120,7 +151,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     for (int i = 0; i < length; i++) {
       c = payload[i];
     }
-    printer.justify(c);
+    JUSTIFY = c;
   }
   // topic to bold the text (0 | 1)
   if (strcmp(topic, mqtt_listen_topic_textbold) == 0) {
@@ -129,9 +160,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
       c = payload[i];
     }
     if (c == '1') {
-      printer.boldOn();
+      BOLD = true;
     } else {
-      printer.boldOff();
+      BOLD = false;
     }
   }
   // topic to underline the text (0 | 1)
@@ -141,9 +172,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
       c = payload[i];
     }
     if (c == '1') {
-      printer.underlineOn();
+      UNDERLINE = true;
     } else {
-      printer.underlineOff();
+      UNDERLINE = false;
     }
   }
 
@@ -230,11 +261,11 @@ void loop() {
   //connect to broker - YELLOW LED
   if (!mqtt.connected()) {
     setLed(255, 50, 0);
-    Serial.print("connecting to broker at:");
+    Serial.print("connecting to broker at: ");
     Serial.println(mqtt_server);
 
     if (mqtt.connect(mqtt_id)) {
-      Serial.println("Connected to broker at: ");
+      Serial.print("Connected to broker at: ");
       Serial.println(mqtt_server);
       //green LED for a tiny bit 
       setLed(0, 255, 0);
