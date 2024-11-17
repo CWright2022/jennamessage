@@ -1,8 +1,41 @@
-const brokerAddress = "wss://broker.hivemq.com:8884/mqtt"
-const client = mqtt.connect(brokerAddress);
-    client.on('connect', () => {
-        console.log('Connected to MQTT broker:', brokerAddress);
+var client;
+var brokerAddress = "ws://192.168.1.85:8000/mqtt"
+errorMessage=document.getElementById("errorMessage");
+button = document.getElementById("submit_button");
+messagesInQueueLabel = document.getElementById("messagesInQueue");
+try {
+    client = mqtt.connect(brokerAddress);
+    client.on("connect", () => {
+        client.subscribe("printer/messages_in_queue", function(err){
+            if(err){
+                console.log(err);
+                errorMessage.textContent = "Error subscribing to relevant topics. Refresh the page or try again later.";
+                client.end();
+            }
+        });
+        console.log("Connected to MQTT broker:", brokerAddress);
+        button.disabled=false;
+        errorMessage.textContent = "";
     });
+    client.on('message', function(topic, message){
+        console.log("got a message");
+        console.log(message.toString());
+        if(topic == "printer/messages_in_queue"){
+            messagesInQueueLabel.textContent = "Messages in queue: ".concat(message.toString());
+        }
+    });
+    
+    client.stream.on("error", (err) => {
+        console.log("Error connecting to broker:\n", err);
+        errorMessage.textContent = "Error connecting to MQTT broker. Refresh the page or try again later.";
+        client.end()
+    });
+} catch (error) {
+    console.log(error);
+    errorMessage.textContent = "Error fetching MQTT.js. Refresh the page or try again later.";
+}
+
+client.publish("printer/get_messages_in_queue", "get");
 
 //get values from HTML form
 function getValues(event) {
@@ -26,6 +59,7 @@ function getValues(event) {
     messageProperties.inverted = document.getElementById("inverted").checked ? "1" : "0";
     console.log(messageProperties);
     sendMessage(messageProperties);
+
 }
 
 //send to relevant mqtt topics
@@ -36,4 +70,9 @@ function sendMessage(messageProperties){
     client.publish("printer/text_justify", messageProperties.justify);
     client.publish("printer/text_size", messageProperties.text_size);
     client.publish("printer/text", messageProperties.message);
+    client.publish("printer/get_messages_in_queue", "get");
+    document.getElementById("messageSent").textContent = "Message sent successfully!";
+    setTimeout(function(){
+        document.getElementById("messageSent").textContent = "";
+    }, 3000);
 }

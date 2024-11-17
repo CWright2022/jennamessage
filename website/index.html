@@ -7,7 +7,7 @@
 </head>
 <body>
     <!-- Input form for user's name -->
-    <form onsubmit="getValues(event)">
+    <form id="message_form" onsubmit="getValues(event)">
         <label for="message">Message:</label>
         <input type="text" id="message" placeholder="Message" required><br>
         
@@ -34,11 +34,13 @@
         <label for="inverted">Inverted:</label>
         <input id="inverted" name="inverted" type="checkbox"><br>
 
-        <button type="submit">Submit</button>
+        <button id="submit_button" type="submit" disabled="true">Submit</button>
     </form>
     
-    <!-- Display greeting message here -->
-    
+    <p id="messageSent"></p>
+    <p id="errorMessage">Connecting to MQTT Broker. Please wait...</p>
+    <p id="messagesInQueue">Messages in queue: </p>
+
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
     
