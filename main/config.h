@@ -1,4 +1,4 @@
-const char* ssid                    = "crackhome";
+const char* ssid                    = "crackhome"; //random wifi creds so you don't hack me
 const char* password                = "crackhome";
 const char* mqtt_server             = "192.168.1.85";
 const char* mqtt_user               = "";
@@ -17,6 +17,8 @@ const char* mqtt_listen_topic_textinverse = "printer/text_inverted";
 const char* mqtt_listen_topic_textjustify = "printer/text_justify";
 const char* mqtt_listen_topic_textbold = "printer/text_bold";
 const char* mqtt_listen_topic_textunderline = "printer/text_underline";
+const char* mqtt_topic_messages_in_queue = "printer/messages_in_queue";
+const char* mqtt_topic_get_messages_in_queue = "printer/get_messages_in_queue";
 // since Version 2.1
 const char* mqtt_listen_topic_papercheck = "printer/papercheck"; // on this topic, you will recieve every defined 10 seconds the status of the paperload 
 //

@@ -12,10 +12,9 @@
 #define GREEN_PIN 12
 #define BLUE_PIN 13
 #define BUTTON_PIN 10
-#define DEBUG_PIN 15
 
-#define MAX_TOPIC_LENGTH 50
-#define MAX_PAYLOAD_LENGTH 10
+// #define MAX_TOPIC_LENGTH 50
+// #define MAX_PAYLOAD_LENGTH 10
 
 //i hate embedded code - this system of multiple queues isn't ideal
 #define QUEUE_SIZE 10
@@ -110,6 +109,10 @@ void printQueuedMessage(){
     }
     //reset flag
     printMessage = false;
+    //publish number of messages in queue
+    char queueCountStr[2]; // Temporary buffer to hold the string representation
+    snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
+    mqtt.publish(mqtt_topic_messages_in_queue, queueCountStr);
 }
 
 //MQTT callback - needs major refactoring to support format changes
@@ -188,6 +191,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
     queueMessage(output);
   }
+
+  if (strcmp(topic, mqtt_topic_get_messages_in_queue) == 0) {
+    char payloadStr[4]; // Adjust size as needed
+    strncpy(payloadStr, reinterpret_cast<const char*>(payload), sizeof(payloadStr) - 1);
+    payloadStr[sizeof(payloadStr) - 1] = '\0'; // Ensure null termination
+    if(strcmp(payloadStr, "get") == 0){
+      //publish number of messages in queue
+      char queueCountStr[2]; // Temporary buffer to hold the string representation
+      snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
+      mqtt.publish(mqtt_topic_messages_in_queue, queueCountStr);
+    }
+  }
 }
 
 //manually setting LED color without JLED
@@ -203,7 +218,6 @@ void setup() {
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT);
-  pinMode(DEBUG_PIN, INPUT);
   setLed(255, 255, 255);
   Serial.begin(115200);
   attachInterrupt(BUTTON_PIN, isr, FALLING);
@@ -277,6 +291,7 @@ void loop() {
       mqtt.subscribe(mqtt_listen_topic_textjustify);
       mqtt.subscribe(mqtt_listen_topic_textbold);
       mqtt.subscribe(mqtt_listen_topic_textunderline);
+      mqtt.subscribe(mqtt_topic_get_messages_in_queue);
       //reset LED so JLED can take over
       setLed(0, 0, 0);
     } else {
