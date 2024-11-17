@@ -281,7 +281,7 @@ void loop() {
     Serial.print("connecting to broker at: ");
     Serial.println(mqtt_server);
 
-    if (mqtt.connect(mqtt_id)) {
+    if (mqtt.connect(mqtt_id, mqtt_user, mqtt_pass)) {
       Serial.print("Connected to broker at: ");
       Serial.println(mqtt_server);
       //green LED for a tiny bit 

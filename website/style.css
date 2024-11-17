@@ -18,7 +18,7 @@ html, body {
 }
 
 /* Form container */
-form {
+#message_form {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -31,7 +31,6 @@ form {
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
 /* Form labels and inputs */
 form label {
     display: block;
@@ -87,6 +86,13 @@ p {
     color: #dc3545;
 }
 
+#passwordStatusMessage{
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #dc3545; /* Red for error messages */
+    visibility: hidden; /* Hidden by default */
+}
+
 #messagesInQueue {
     color: #17a2b8;
 }
@@ -102,6 +108,10 @@ p {
 /* Make the message visible when content is present */
 #messageSent.visible {
     visibility: visible; /* Show the message */
+}
+
+#passwordStatusMessage.visible{
+    visibility: visible;
 }
 
 /* Checkbox container: Align all checkboxes in a row */
@@ -152,6 +162,40 @@ form input[type="checkbox"]:focus {
     text-align: center;
     margin: 3rem 0 3rem 0; /*Centered, with space below for the form
     max-width: 600px; /* Match the form's width for consistency */
+}
+
+/* Modal container */
+.modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    z-index: 10; /* Place it on top of everything */
+    visibility: visible; /* Initially visible */
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Modal hidden state */
+.modal.hidden {
+    visibility: hidden;
+    opacity: 0;
+}
+
+/* Modal content (password form) */
+.modal-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
 }
 
 /* Responsive design */

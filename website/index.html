@@ -4,10 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jenna's Secret Gift</title>
-    <head><link rel="stylesheet" href="style.css"></head>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Input form for user's name -->
+    <!-- Password form as a modal -->
+    <div id="password_modal" class="modal">
+        <form id="password_form" class="modal-content" onsubmit="connect(event)">
+            <label for="password_field">Password:</label>
+            <input type="text" id="password_field" placeholder="Enter Password" required maxlength="70">
+            <button id="submit_password" type="submit">Submit Password</button>
+            <p id="passwordStatusMessage">Incorrect password. Please try again.</p>
+        </form>
+    </div>
+
+    <!-- Message form -->
     <form id="message_form" onsubmit="getValues(event)">
         <label for="message">Message:</label>
         <input type="text" id="message" placeholder="Message" required maxlength="140"><br>
@@ -25,16 +35,18 @@
             <option value="C">Center</option>
             <option value="R">Right</option>
         </select><br>
+        
         <div class="checkbox-container">
             <label for="bold">Bold:</label>
-            <input id="bold" name="bold" type="checkbox"><br>
+            <input id="bold" name="bold" type="checkbox">
 
             <label for="underline">Underline:</label>
-            <input id="underline" name="underline" type="checkbox"><br>
+            <input id="underline" name="underline" type="checkbox">
 
             <label for="inverted">Inverted:</label>
-            <input id="inverted" name="inverted" type="checkbox"><br>
+            <input id="inverted" name="inverted" type="checkbox">
         </div>
+        
         <button id="submit_button" type="submit" disabled="true">Submit</button>
     </form>
     
@@ -43,8 +55,8 @@
         <p id="errorMessage">Connecting to MQTT Broker. Please wait...</p>
         <p id="messagesInQueue">Messages in queue: </p>
     </div>
+    
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
-    
 </body>
 </html>
