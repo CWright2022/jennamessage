@@ -1,39 +1,42 @@
 var client;
-var brokerAddress = "ws://192.168.1.85:8000/mqtt"
+var brokerAddress = "ws://broker.com/mqtt"
 errorMessage=document.getElementById("errorMessage");
 button = document.getElementById("submit_button");
 messagesInQueueLabel = document.getElementById("messagesInQueue");
-try {
-    client = mqtt.connect(brokerAddress);
-    client.on("connect", () => {
-        client.subscribe("printer/messages_in_queue", function(err){
-            if(err){
-                console.log(err);
-                errorMessage.textContent = "Error subscribing to relevant topics. Refresh the page or try again later.";
-                client.end();
-            }
-        });
-        console.log("Connected to MQTT broker:", brokerAddress);
-        button.disabled=false;
-        errorMessage.textContent = "";
-    });
-    client.on('message', function(topic, message){
-        console.log("got a message");
-        console.log(message.toString());
-        if(topic == "printer/messages_in_queue"){
-            messagesInQueueLabel.textContent = "Messages in queue: ".concat(message.toString());
+client = mqtt.connect(brokerAddress);
+client.on("connect", () => {
+    client.subscribe("printer/messages_in_queue", function(err){
+        if(err){
+            console.log(err);
+            errorMessage.textContent = "Error subscribing to relevant topics. Refresh the page or try again later.";
+            client.end();
         }
     });
-    
-    client.stream.on("error", (err) => {
-        console.log("Error connecting to broker:\n", err);
-        errorMessage.textContent = "Error connecting to MQTT broker. Refresh the page or try again later.";
-        client.end()
-    });
-} catch (error) {
-    console.log(error);
-    errorMessage.textContent = "Error fetching MQTT.js. Refresh the page or try again later.";
-}
+    console.log("Connected to MQTT broker:", brokerAddress);
+    button.disabled=false;
+    errorMessage.textContent = "";
+});
+client.on('message', function(topic, message){
+    if(topic == "printer/messages_in_queue"){
+        console.log("messages in queue: ".concat(message.toString()));
+        messagesInQueueLabel.textContent = "Messages in queue: ".concat(message.toString());
+        if(parseInt(message.toString())>=10){
+            console.log("too many messages");
+            errorMessage.textContent = "There are too many messages (>10) in the queue currently. Try again later.";
+            button.disabled=true;
+        }
+        else{
+            button.disabled=false;
+            errorMessage.textContent = "";
+        }
+    }
+});
+
+client.stream.on("error", (err) => {
+    console.log("Error connecting to broker:\n", err);
+    errorMessage.textContent = "Error connecting to MQTT broker. Refresh the page or try again later.";
+    client.end()
+});
 
 client.publish("printer/get_messages_in_queue", "get");
 
@@ -72,7 +75,13 @@ function sendMessage(messageProperties){
     client.publish("printer/text", messageProperties.message);
     client.publish("printer/get_messages_in_queue", "get");
     document.getElementById("messageSent").textContent = "Message sent successfully!";
+    document.getElementById("messageSent").classList.add("visible");
+    document.getElementById("message").value="";
     setTimeout(function(){
         document.getElementById("messageSent").textContent = "";
+        messageSent.classList.remove("visible"); // Hide the message
     }, 3000);
+    setTimeout(function(){
+        document.getElementById("errorMessage").textContent = "";
+    }, 5000);
 }

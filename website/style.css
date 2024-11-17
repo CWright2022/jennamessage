@@ -1,0 +1,179 @@
+/* General reset */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+    overflow: auto;
+}
+
+#messageSent,
+#errorMessage,
+#messagesInQueue {
+    margin: 0;
+}
+
+/* Form container */
+form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    margin: 0.25rem auto;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Form labels and inputs */
+form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+form input,
+form select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+form input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+form button {
+    width: 100%;
+    background: #007BFF;
+    color: #fff;
+    padding: 1rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+form button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+form button:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+/* Styling for messages */
+p {
+    text-align: center;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+#errorMessage {
+    color: #dc3545;
+}
+
+#messagesInQueue {
+    color: #17a2b8;
+}
+
+#messageSent {
+    min-height: 1rem;
+    text-align: center;
+    color: #28a745;
+    font-weight: bold;
+    visibility: hidden;
+}
+
+/* Make the message visible when content is present */
+#messageSent.visible {
+    visibility: visible; /* Show the message */
+}
+
+/* Checkbox container: Align all checkboxes in a row */
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap; /* Wraps to the next line if space runs out */
+    gap: 0.1rem; /* Spacing between each checkbox and label */
+    margin-bottom: 1.5rem; /* Space below the group */
+}
+
+/* Style individual checkboxes and labels */
+form label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between the label text and the checkbox */
+    cursor: pointer; /* Makes the entire label clickable */
+    margin-bottom: 0; /* Removes bottom margin for inline display */
+}
+
+/* Hide the default checkbox appearance */
+form input[type="checkbox"] {
+    appearance: none; /* Removes the default checkbox styling */
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 2px solid #007BFF;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Checked checkbox styling */
+form input[type="checkbox"]:checked {
+    background-color: #007BFF;
+    border-color: #0056b3;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Cpath d='M6.003 10.74l-3.717-3.716a.75.75 0 0 1 1.06-1.06l2.657 2.656 6.216-6.216a.75.75 0 1 1 1.06 1.061L6.003 10.74z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Accessibility focus styling */
+form input[type="checkbox"]:focus {
+    outline: 2px solid #80bdff;
+    outline-offset: 2px;
+}
+
+.messages-container {
+    text-align: center;
+    margin: 3rem 0 3rem 0; /*Centered, with space below for the form
+    max-width: 600px; /* Match the form's width for consistency */
+}
+
+/* Responsive design */
+@media (max-width: 00px) {
+    form {
+        padding: 1rem;
+    }
+
+    form label,
+    form input,
+    form select,
+    form button {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 600px) {
+    /* .messages-container {
+        margin-bottom: 1.5rem;
+    } */
+
+    form {
+        padding: 1rem;
+    }
+}

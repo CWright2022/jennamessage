@@ -87,6 +87,9 @@ void printQueuedMessage(){
     boldQueue[queueStart] ? printer.boldOn() : printer.boldOff();
     printer.justify(justifyQueue[queueStart]);
     printer.setSize(sizeQueue[queueStart]);
+    if(messageQueue[queueStart].length()>140){
+      messageQueue[queueStart] = messageQueue[queueStart].substring(0,140);
+    }
     printer.print(messageQueue[queueStart]);
     Serial.print("printed message: ");
     Serial.println(messageQueue[queueStart]);
@@ -110,7 +113,7 @@ void printQueuedMessage(){
     //reset flag
     printMessage = false;
     //publish number of messages in queue
-    char queueCountStr[2]; // Temporary buffer to hold the string representation
+    char queueCountStr[3]; // Temporary buffer to hold the string representation
     snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
     mqtt.publish(mqtt_topic_messages_in_queue, queueCountStr);
 }
@@ -198,7 +201,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     payloadStr[sizeof(payloadStr) - 1] = '\0'; // Ensure null termination
     if(strcmp(payloadStr, "get") == 0){
       //publish number of messages in queue
-      char queueCountStr[2]; // Temporary buffer to hold the string representation
+      char queueCountStr[3]; // Temporary buffer to hold the string representation
       snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
       mqtt.publish(mqtt_topic_messages_in_queue, queueCountStr);
     }

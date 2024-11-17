@@ -1,6 +1,6 @@
-const char* ssid                    = "crackhome"; //random wifi creds so you don't hack me
-const char* password                = "crackhome";
-const char* mqtt_server             = "192.168.1.85";
+const char* ssid                    = "SSID"; //random wifi creds so you don't hack me
+const char* password                = "password";
+const char* mqtt_server             = "broker.com";
 const char* mqtt_user               = "";
 const char* mqtt_pass               = "";
 const char* my_id                   = "testclient";

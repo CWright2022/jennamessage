@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jenna's Secret Gift</title>
+    <head><link rel="stylesheet" href="style.css"></head>
 </head>
 <body>
     <!-- Input form for user's name -->
     <form id="message_form" onsubmit="getValues(event)">
         <label for="message">Message:</label>
-        <input type="text" id="message" placeholder="Message" required><br>
+        <input type="text" id="message" placeholder="Message" required maxlength="140"><br>
         
         <label for="text_size">Text Size:</label>
         <select name="text_size" id="text_size">
@@ -24,23 +25,24 @@
             <option value="C">Center</option>
             <option value="R">Right</option>
         </select><br>
+        <div class="checkbox-container">
+            <label for="bold">Bold:</label>
+            <input id="bold" name="bold" type="checkbox"><br>
 
-        <label for="bold">Bold:</label>
-        <input id="bold" name="bold" type="checkbox"><br>
+            <label for="underline">Underline:</label>
+            <input id="underline" name="underline" type="checkbox"><br>
 
-        <label for="underline">Underline:</label>
-        <input id="underline" name="underline" type="checkbox"><br>
-
-        <label for="inverted">Inverted:</label>
-        <input id="inverted" name="inverted" type="checkbox"><br>
-
+            <label for="inverted">Inverted:</label>
+            <input id="inverted" name="inverted" type="checkbox"><br>
+        </div>
         <button id="submit_button" type="submit" disabled="true">Submit</button>
     </form>
     
-    <p id="messageSent"></p>
-    <p id="errorMessage">Connecting to MQTT Broker. Please wait...</p>
-    <p id="messagesInQueue">Messages in queue: </p>
-
+    <div class="messages-container">
+        <p id="messageSent"></p>
+        <p id="errorMessage">Connecting to MQTT Broker. Please wait...</p>
+        <p id="messagesInQueue">Messages in queue: </p>
+    </div>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
     
