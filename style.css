@@ -196,6 +196,12 @@ form input[type="checkbox"]:focus {
     width: 90%;
     max-width: 400px;
     text-align: center;
+    align-items: center;
+}
+
+#password_field {
+    max-width: 93%;
+    align-self: center;
 }
 
 /* Responsive design */
