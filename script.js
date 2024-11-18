@@ -1,5 +1,5 @@
 var client;
-var brokerAddress = "ws://your_broker_here.com:8000/mqtt"
+var brokerAddress = "ws://vpn.caydenwright.com:8000/mqtt"
 errorMessage=document.getElementById("errorMessage");
 button = document.getElementById("submit_button");
 messagesInQueueLabel = document.getElementById("messagesInQueue");

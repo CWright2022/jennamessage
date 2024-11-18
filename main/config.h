@@ -1,9 +1,9 @@
 const char* ssid                    = "SSID"; //random wifi creds so you don't hack me
-const char* password                = "PASSWORD";
-const char* mqtt_server             = "BROKER";
-const char* mqtt_user               = "USER";
-const char* mqtt_pass               = "PASS";
-const char* my_id                   = "testclient";
+const char* password                = "password";
+const char* mqtt_server             = "broker.com";
+const char* mqtt_user               = "username";
+const char* mqtt_pass               = "password";
+const char* my_id                   = "id";
 const unsigned int mqtt_port        = 1883;
 const unsigned int baud             = 19200;
 

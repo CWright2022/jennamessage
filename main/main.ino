@@ -103,6 +103,7 @@ void printQueuedMessage(){
     Serial.println(justifyQueue[queueStart]);
     Serial.print("Size: ");
     Serial.println(sizeQueue[queueStart]);
+    printer.feed(4);
     queueStart = (queueStart + 1) % QUEUE_SIZE;
     queueCount--;
     //if no more messages, stop breathing
