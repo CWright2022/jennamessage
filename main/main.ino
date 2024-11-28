@@ -4,14 +4,12 @@
 #include "config.h"
 #include "Adafruit_Thermal.h"
 #include "SoftwareSerial.h"
-#include <jled.h>
+#include <Adafruit_NeoPixel.h>
 
 #define RX_PIN 5  // RX for printer
 #define TX_PIN 4  // TX for printer
-#define RED_PIN 14
-#define GREEN_PIN 12
-#define BLUE_PIN 13
-#define BUTTON_PIN 10
+#define LED_PIN 14 //ws2812 LED pin
+#define BUTTON_PIN 10 //pin for pushbutton
 
 // #define MAX_TOPIC_LENGTH 50
 // #define MAX_PAYLOAD_LENGTH 10
@@ -47,10 +45,7 @@ PubSubClient mqtt(client);
 
 SoftwareSerial mySerial(RX_PIN, TX_PIN);
 Adafruit_Thermal printer(&mySerial);
-
-auto redLed = JLed(RED_PIN);
-auto greenLed = JLed(GREEN_PIN);
-auto blueLed = JLed(BLUE_PIN);
+Adafruit_NeoPixel mainLed(1, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 bool printMessage = false;
 
@@ -75,8 +70,8 @@ void queueMessage(const String& message) {
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
     queueCount++;
     //breathe purple LED
-    redLed.Breathe(2000).DelayAfter(1000).Forever();
-    blueLed.Breathe(2000).DelayAfter(1000).Forever();
+    mainLed.setPixelColor(1, mainLed.Color(255,0,255));
+    mainLed.show();
   }
 }
 
@@ -108,8 +103,7 @@ void printQueuedMessage(){
     queueCount--;
     //if no more messages, stop breathing
     if(queueCount == 0){
-      redLed.Stop();
-      blueLed.Stop();
+      mainLed.clear();
     }
     //reset flag
     printMessage = false;
@@ -209,21 +203,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-//manually setting LED color without JLED
-void setLed(int red, int green, int blue) {
-  analogWrite(RED_PIN, red);
-  analogWrite(GREEN_PIN, green);
-  analogWrite(BLUE_PIN, blue);
-}
-
 void setup() {
   //basic setup
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-  pinMode(BUTTON_PIN, INPUT);
-  setLed(255, 255, 255);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  mainLed.begin();
+  mainLed.setPixelColor(1, mainLed.Color(255,255,255));
+  mainLed.show();
   Serial.begin(115200);
+  Serial.println("JENNA'S SECRET CHRISTMAS PRESENT 2024 - by Cayden Wright");
+  Serial.println("booting...");
   attachInterrupt(BUTTON_PIN, isr, FALLING);
 
   //initialize printer
@@ -251,14 +239,10 @@ void loop() {
     printQueuedMessage();
   }
 
-  //JLED update functions
-  redLed.Update();
-  greenLed.Update();
-  blueLed.Update();
-
   //connect to Wifi - RED LED
   if (WiFi.status() != WL_CONNECTED) {
-    setLed(255, 0, 0);
+    mainLed.setPixelColor(1, mainLed.Color(255,0,0));
+    mainLed.show();
 
     Serial.println(F("Connecting to WiFi..."));
     WiFi.begin(ssid, password);
@@ -278,15 +262,16 @@ void loop() {
 
   //connect to broker - YELLOW LED
   if (!mqtt.connected()) {
-    setLed(255, 50, 0);
+    mainLed.setPixelColor(1, mainLed.Color(255,50,0));
+    mainLed.show();
     Serial.print("connecting to broker at: ");
     Serial.println(mqtt_server);
 
     if (mqtt.connect(mqtt_id, mqtt_user, mqtt_pass)) {
       Serial.print("Connected to broker at: ");
       Serial.println(mqtt_server);
-      //green LED for a tiny bit 
-      setLed(0, 255, 0);
+      mainLed.setPixelColor(1, mainLed.Color(0,255,0));
+      mainLed.show();
       //subscribe to all topics
       mqtt.subscribe(mqtt_listen_topic_text2print);
       mqtt.subscribe(mqtt_listen_topic_textsize);
@@ -296,8 +281,8 @@ void loop() {
       mqtt.subscribe(mqtt_listen_topic_textbold);
       mqtt.subscribe(mqtt_listen_topic_textunderline);
       mqtt.subscribe(mqtt_topic_get_messages_in_queue);
-      //reset LED so JLED can take over
-      setLed(0, 0, 0);
+      //reset LED
+      mainLed.clear();
     } else {
       Serial.print("connection to broker:");
       Serial.print(mqtt_server);
