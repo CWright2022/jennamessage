@@ -1,5 +1,5 @@
 const char* ssid                    = "SSID"; //random wifi creds so you don't hack me
-const char* password                = "PASSWORD";
+const char* password                = "Password";
 const char* mqtt_server             = "vpn.caydenwright.com";
 const char* mqtt_user               = "user";
 const char* mqtt_pass               = "pass";

@@ -70,7 +70,7 @@ void queueMessage(const String& message) {
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
     queueCount++;
     //breathe purple LED
-    mainLed.setPixelColor(1, mainLed.Color(255,0,255));
+    mainLed.setPixelColor(0, mainLed.Color(255,0,255));
     mainLed.show();
   }
 }
@@ -88,23 +88,26 @@ void printQueuedMessage(){
     printer.print(messageQueue[queueStart]);
     Serial.print("printed message: ");
     Serial.println(messageQueue[queueStart]);
-    Serial.print("Inverted: ");
-    Serial.println(invertQueue[queueStart]);
-    Serial.print("Underline: ");
-    Serial.println(underlineQueue[queueStart]);
-    Serial.print("Bold: ");
-    Serial.println(boldQueue[queueStart]);
-    Serial.print("Justify: ");
-    Serial.println(justifyQueue[queueStart]);
-    Serial.print("Size: ");
-    Serial.println(sizeQueue[queueStart]);
+    // Serial.print("Inverted: ");
+    // Serial.println(invertQueue[queueStart]);
+    // Serial.print("Underline: ");
+    // Serial.println(underlineQueue[queueStart]);
+    // Serial.print("Bold: ");
+    // Serial.println(boldQueue[queueStart]);
+    // Serial.print("Justify: ");
+    // Serial.println(justifyQueue[queueStart]);
+    // Serial.print("Size: ");
+    // Serial.println(sizeQueue[queueStart]);
     printer.feed(4);
     queueStart = (queueStart + 1) % QUEUE_SIZE;
     queueCount--;
     //if no more messages, stop breathing
     if(queueCount == 0){
       mainLed.clear();
+      mainLed.show();
     }
+    Serial.print("QueueCount:");
+    Serial.println(queueCount);
     //reset flag
     printMessage = false;
     //publish number of messages in queue
@@ -207,7 +210,9 @@ void setup() {
   //basic setup
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   mainLed.begin();
-  mainLed.setPixelColor(1, mainLed.Color(255,255,255));
+  mainLed.clear();
+  mainLed.show();
+  mainLed.setPixelColor(0, mainLed.Color(255,255,255));
   mainLed.show();
   Serial.begin(115200);
   Serial.println("JENNA'S SECRET CHRISTMAS PRESENT 2024 - by Cayden Wright");
@@ -231,6 +236,7 @@ void setup() {
   //setup MQTT
   mqtt.setServer(mqtt_server, mqtt_port);
   mqtt.setCallback(callback);
+  mainLed.clear();
 }
 
 void loop() {
@@ -241,7 +247,7 @@ void loop() {
 
   //connect to Wifi - RED LED
   if (WiFi.status() != WL_CONNECTED) {
-    mainLed.setPixelColor(1, mainLed.Color(255,0,0));
+    mainLed.setPixelColor(0, mainLed.Color(255,0,0));
     mainLed.show();
 
     Serial.println(F("Connecting to WiFi..."));
@@ -257,12 +263,14 @@ void loop() {
       }
     }
     Serial.println("WiFi connected!");
+    mainLed.clear();
+    mainLed.show();
   }
 
 
   //connect to broker - YELLOW LED
   if (!mqtt.connected()) {
-    mainLed.setPixelColor(1, mainLed.Color(255,50,0));
+    mainLed.setPixelColor(0, mainLed.Color(255,50,0));
     mainLed.show();
     Serial.print("connecting to broker at: ");
     Serial.println(mqtt_server);
@@ -270,7 +278,7 @@ void loop() {
     if (mqtt.connect(mqtt_id, mqtt_user, mqtt_pass)) {
       Serial.print("Connected to broker at: ");
       Serial.println(mqtt_server);
-      mainLed.setPixelColor(1, mainLed.Color(0,255,0));
+      mainLed.setPixelColor(0, mainLed.Color(0,255,0));
       mainLed.show();
       //subscribe to all topics
       mqtt.subscribe(mqtt_listen_topic_text2print);
@@ -283,6 +291,7 @@ void loop() {
       mqtt.subscribe(mqtt_topic_get_messages_in_queue);
       //reset LED
       mainLed.clear();
+      mainLed.show();
     } else {
       Serial.print("connection to broker:");
       Serial.print(mqtt_server);
