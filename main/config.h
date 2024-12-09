@@ -1,9 +1,9 @@
 const char* ssid                    = "SSID"; //random wifi creds so you don't hack me
-const char* password                = "Password";
+const char* password                = "PASSWORD";
 const char* mqtt_server             = "vpn.caydenwright.com";
-const char* mqtt_user               = "user";
-const char* mqtt_pass               = "pass";
-const char* my_id                   = "id";
+const char* mqtt_user               = "USER";
+const char* mqtt_pass               = "PASS";
+const char* my_id                   = "ID";
 const unsigned int mqtt_port        = 1883;
 const unsigned int baud             = 19200;
 

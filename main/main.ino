@@ -11,8 +11,6 @@
 #define LED_PIN 14 //ws2812 LED pin
 #define BUTTON_PIN 10 //pin for pushbutton
 
-// #define MAX_TOPIC_LENGTH 50
-// #define MAX_PAYLOAD_LENGTH 10
 
 //i hate embedded code - this system of multiple queues isn't ideal
 #define QUEUE_SIZE 10
@@ -30,6 +28,10 @@ bool UNDERLINE = false;
 bool BOLD = false;
 char JUSTIFY = 'C';
 char SIZE = 'L';
+
+//NEED TO TEST THIS
+bool canPrintTimeout = true;
+bool previousMillis = 0;
 
 int queueStart = 0;
 int queueEnd = 0;
@@ -51,7 +53,7 @@ bool printMessage = false;
 
 //interrupt function to set a flag for later (above) since we can't spend too long on an interrupt
 ICACHE_RAM_ATTR void isr() {
-  if(queueCount > 0){
+  if(queueCount > 0 && canPrintTimeout){
     printMessage = true;
   }
 }
@@ -108,8 +110,11 @@ void printQueuedMessage(){
     }
     Serial.print("QueueCount:");
     Serial.println(queueCount);
-    //reset flag
+    //reset flag and timeout
     printMessage = false;
+    //NEED TO TEST THIS
+    canPrintTimeout = false;
+    previousMillis=millis();
     //publish number of messages in queue
     char queueCountStr[3]; // Temporary buffer to hold the string representation
     snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
@@ -241,8 +246,13 @@ void setup() {
 
 void loop() {
   //print message if we were told to by the interrupt
-  if(printMessage){
+  if(printMessage && canPrintTimeout){
     printQueuedMessage();
+  }
+
+  //NEED TO TEST THIS
+  if(canPrintTimeout=false && millis()-previousMillis >=500){
+    canPrintTimeout=true;
   }
 
   //connect to Wifi - RED LED
