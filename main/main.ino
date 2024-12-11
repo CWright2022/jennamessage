@@ -30,8 +30,8 @@ char JUSTIFY = 'C';
 char SIZE = 'L';
 
 //NEED TO TEST THIS
-bool canPrintTimeout = true;
-bool previousMillis = 0;
+bool canPrintTimeout = 1;
+unsigned long previousMillis = 0;
 
 int queueStart = 0;
 int queueEnd = 0;
@@ -51,12 +51,7 @@ Adafruit_NeoPixel mainLed(1, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 bool printMessage = false;
 
-//interrupt function to set a flag for later (above) since we can't spend too long on an interrupt
-ICACHE_RAM_ATTR void isr() {
-  if(queueCount > 0 && canPrintTimeout){
-    printMessage = true;
-  }
-}
+
 
 
 // Function to add a message to the queue
@@ -112,9 +107,6 @@ void printQueuedMessage(){
     Serial.println(queueCount);
     //reset flag and timeout
     printMessage = false;
-    //NEED TO TEST THIS
-    canPrintTimeout = false;
-    previousMillis=millis();
     //publish number of messages in queue
     char queueCountStr[3]; // Temporary buffer to hold the string representation
     snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
@@ -222,7 +214,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println("JENNA'S SECRET CHRISTMAS PRESENT 2024 - by Cayden Wright");
   Serial.println("booting...");
-  attachInterrupt(BUTTON_PIN, isr, FALLING);
 
   //initialize printer
   mySerial.begin(baud);
@@ -245,14 +236,16 @@ void setup() {
 }
 
 void loop() {
-  //print message if we were told to by the interrupt
-  if(printMessage && canPrintTimeout){
+  if(digitalRead(BUTTON_PIN) == LOW && queueCount > 0 && canPrintTimeout){
+    canPrintTimeout = 0;
+    previousMillis=millis();
     printQueuedMessage();
   }
 
   //NEED TO TEST THIS
-  if(canPrintTimeout=false && millis()-previousMillis >=500){
-    canPrintTimeout=true;
+  if(!canPrintTimeout &&millis()-previousMillis >= 500){
+    canPrintTimeout=1;
+    previousMillis = millis();
   }
 
   //connect to Wifi - RED LED
