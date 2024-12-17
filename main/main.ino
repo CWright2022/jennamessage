@@ -5,16 +5,54 @@
 #include "Adafruit_Thermal.h"
 #include "SoftwareSerial.h"
 #include <Adafruit_NeoPixel.h>
+#include <cmath>  // For sine function
 
 #define RX_PIN 5  // RX for printer
 #define TX_PIN 4  // TX for printer
 #define LED_PIN 14 //ws2812 LED pin
 #define BUTTON_PIN 10 //pin for pushbutton
 
+// NeoPixel breathing LED class (written by ChatGPT 12/17/24)
+class BreathingLED {
+  private:
+      Adafruit_NeoPixel led;   // NeoPixel instance
+      uint8_t r, g, b;         // LED color components
+      int period;              // Breathing period in milliseconds
+      unsigned long startTime; // Start time for breathing effect
 
-//i hate embedded code - this system of multiple queues isn't ideal
+  public:
+      BreathingLED(uint8_t pin, uint16_t numPixels, int breathePeriod, uint8_t red, uint8_t green, uint8_t blue)
+          : led(numPixels, pin, NEO_GRB + NEO_KHZ800), period(breathePeriod), r(red), g(green), b(blue), startTime(0) {}
+
+      void begin() {
+          led.begin();       // Initialize NeoPixel
+          led.show();        // Turn off all LEDs initially
+          startTime = millis();
+      }
+
+      void update() {
+          unsigned long currentTime = millis();
+          float elapsed = (currentTime - startTime) % period; // Time within the breathing period
+          float brightnessFactor = 0.5 * (1 + sin(2 * PI * (elapsed / period))); // Sinusoidal breathing (0 to 1)
+
+          // Set LED color with adjusted brightness
+          led.setPixelColor(0, led.Color(r * brightnessFactor, g * brightnessFactor, b * brightnessFactor));
+          led.show();
+    }
+      //this function sets static colors for status updates
+      void setColor(int r, int g, int b){
+        led.setPixelColor(0, led.Color(r,g,b));
+        led.show();
+      }
+
+      void clear(){
+        led.clear();
+        led.show();
+      }
+};
+
+//i am not good at C++ nor embedded code - this system of multiple queues isn't ideal
 #define QUEUE_SIZE 10
-
 //setup arrays, global vars and tracking vars
 String messageQueue[QUEUE_SIZE];
 bool invertQueue[QUEUE_SIZE];
@@ -22,24 +60,25 @@ bool underlineQueue[QUEUE_SIZE];
 bool boldQueue[QUEUE_SIZE];
 char justifyQueue[QUEUE_SIZE];
 char sizeQueue[QUEUE_SIZE];
+int queueStart = 0;
+int queueEnd = 0;
+int queueCount = 0;
 
+//global vars that will get set and sent to printer - a class would be useful here
 bool INVERT = false;
 bool UNDERLINE = false;
 bool BOLD = false;
 char JUSTIFY = 'C';
 char SIZE = 'L';
 
-//NEED TO TEST THIS
+//button debouncing vars
 bool canPrintTimeout = 1;
 unsigned long previousMillis = 0;
-
-int queueStart = 0;
-int queueEnd = 0;
-int queueCount = 0;
 
 char mqtt_id[24];
 char mqtt_topic[50];
 
+//papercheck var
 uint32_t lastTimeItHappened = millis() + papercheck_milliseconds;
 
 WiFiClient client;
@@ -47,12 +86,6 @@ PubSubClient mqtt(client);
 
 SoftwareSerial mySerial(RX_PIN, TX_PIN);
 Adafruit_Thermal printer(&mySerial);
-Adafruit_NeoPixel mainLed(1, LED_PIN, NEO_GRB + NEO_KHZ800);
-
-bool printMessage = false;
-
-
-
 
 // Function to add a message to the queue
 void queueMessage(const String& message) {
@@ -66,9 +99,6 @@ void queueMessage(const String& message) {
     Serial.println(queueEnd);
     queueEnd = (queueEnd + 1) % QUEUE_SIZE;
     queueCount++;
-    //breathe purple LED
-    mainLed.setPixelColor(0, mainLed.Color(255,0,255));
-    mainLed.show();
   }
 }
 
@@ -99,14 +129,10 @@ void printQueuedMessage(){
     queueStart = (queueStart + 1) % QUEUE_SIZE;
     queueCount--;
     //if no more messages, stop breathing
-    if(queueCount == 0){
-      mainLed.clear();
-      mainLed.show();
-    }
     Serial.print("QueueCount:");
     Serial.println(queueCount);
     //reset flag and timeout
-    printMessage = false;
+    // printMessage = false;
     //publish number of messages in queue
     char queueCountStr[3]; // Temporary buffer to hold the string representation
     snprintf(queueCountStr, sizeof(queueCountStr), "%d", queueCount); // Convert to string
@@ -202,15 +228,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
   }
 }
-
+BreathingLED mainLed(LED_PIN, 1, 2000, 255, 0, 175); // purple LED, 2 second breathing period
 void setup() {
   //basic setup
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   mainLed.begin();
-  mainLed.clear();
-  mainLed.show();
-  mainLed.setPixelColor(0, mainLed.Color(255,255,255));
-  mainLed.show();
+  mainLed.setColor(255, 255, 255);
   Serial.begin(115200);
   Serial.println("JENNA'S SECRET CHRISTMAS PRESENT 2024 - by Cayden Wright");
   Serial.println("booting...");
@@ -236,22 +259,30 @@ void setup() {
 }
 
 void loop() {
+  //poll button
   if(digitalRead(BUTTON_PIN) == LOW && queueCount > 0 && canPrintTimeout){
     canPrintTimeout = 0;
     previousMillis=millis();
     printQueuedMessage();
+    if(queueCount==0){
+      mainLed.clear();
+    }
   }
 
-  //NEED TO TEST THIS
+  //reset debouncing timer
   if(!canPrintTimeout &&millis()-previousMillis >= 500){
     canPrintTimeout=1;
     previousMillis = millis();
   }
 
+  //breathe led
+  if(queueCount > 0){
+    mainLed.update();
+  }
+
   //connect to Wifi - RED LED
   if (WiFi.status() != WL_CONNECTED) {
-    mainLed.setPixelColor(0, mainLed.Color(255,0,0));
-    mainLed.show();
+    mainLed.setColor(255,0,0);
 
     Serial.println(F("Connecting to WiFi..."));
     WiFi.begin(ssid, password);
@@ -267,22 +298,19 @@ void loop() {
     }
     Serial.println("WiFi connected!");
     mainLed.clear();
-    mainLed.show();
   }
 
 
   //connect to broker - YELLOW LED
   if (!mqtt.connected()) {
-    mainLed.setPixelColor(0, mainLed.Color(255,50,0));
-    mainLed.show();
+    mainLed.setColor(255,50,0);
     Serial.print("connecting to broker at: ");
     Serial.println(mqtt_server);
 
     if (mqtt.connect(mqtt_id, mqtt_user, mqtt_pass)) {
       Serial.print("Connected to broker at: ");
       Serial.println(mqtt_server);
-      mainLed.setPixelColor(0, mainLed.Color(0,255,0));
-      mainLed.show();
+      mainLed.setColor(0,255,0);
       //subscribe to all topics
       mqtt.subscribe(mqtt_listen_topic_text2print);
       mqtt.subscribe(mqtt_listen_topic_textsize);
@@ -294,7 +322,6 @@ void loop() {
       mqtt.subscribe(mqtt_topic_get_messages_in_queue);
       //reset LED
       mainLed.clear();
-      mainLed.show();
     } else {
       Serial.print("connection to broker:");
       Serial.print(mqtt_server);
